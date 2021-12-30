@@ -105,12 +105,11 @@ void setup()
 }
 void updateControl() {
  //chord setting
- chord = (mozziAnalogRead(3) / 128) + (mozziAnalogRead(5) / 128);
- chord = constrain(chord, 0, 7);
+ chord = constrain(mozziAnalogRead(2) / 128, 0, 7); // IN1/POT1
 
  //inversion setting
- inv_knob = mozziAnalogRead(1);
- inv = (inv_knob  / 64)+ (mozziAnalogRead(4) / 64);
+ inv_knob = mozziAnalogRead(1); // IN2/POT2
+ inv = (inv_knob  / 64);
  inv = constrain(inv, 0, 15);
 
  if (inv_knob < 1020) { //when selecting wave , not apply
@@ -253,16 +252,40 @@ void updateControl() {
    note5 = (pgm_read_byte(&(chord_table[chord][0])));
  }
 
- //OSC frequency knob
- freq1 = mozziAnalogRead(0) / 4 ;
 
- //set wave
- if (inv_knob >= 1020) { //inv knob max
-   wave = (mozziAnalogRead(3) / 128);
- }
+static const byte OPTION = 1; // please select your option at compile time
+switch (OPTION) {
+  case 1:
+    // Option 1: always select wave via POT3, fixed base freq
+    wave = (mozziAnalogRead(0) / 128); // POT3
+    freq1 = 64;
+    break;
+
+  case 2:
+  // Option 2: select wave via POT3 only if POT2 is turned to the right, fixed base freq
+  if (inv_knob >= 1020) { //inv knob max
+    wave = (mozziAnalogRead(0) / 128); // POT3
+    freq1 = 64;
+  }
+  break;
+
+  case 3:
+  // Option 3: select wave via input A only if POT2 is turned to the right, select base freq via POT3
+  // This option is closest to the original code
+    //OSC frequency knob
+    freq1 = mozziAnalogRead(0) / 4 ; // POT3
+
+    if (inv_knob >= 1020) { //inv knob max
+      wave = (mozziAnalogRead(4) / 128); // Input "A"
+    }
+    break;
+
+  default: // should not happen
+    break;
+}
 
  //frequency setting
- voct = mozziAnalogRead(7) ;
+ voct = mozziAnalogRead(3) ; // IN3
  freqv1 = freq1 * pow(2, (pgm_read_float(&(voctpow[voct + 205 * inv_aply1 + note1])))); //ROOT
  freqv2 = freq1 * pow(2, (pgm_read_float(&(voctpow[voct + 205 * inv_aply2 + note2])))); //2nd
  freqv3 = freq1 * pow(2, (pgm_read_float(&(voctpow[voct + 205 * inv_aply3 + note3])))); //3rd
