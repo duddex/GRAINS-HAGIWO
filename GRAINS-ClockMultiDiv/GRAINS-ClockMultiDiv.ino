@@ -42,12 +42,16 @@ byte old_mode = 0; // Measures against misreading of RATE value when switching S
 int old_MD_ch1 = 0; // Bug fix for divider clock to go wrong when switching
 int old_MD_ch2 = 0; // Bug fix for divider clock to go wrong when switching
 
+int ch1out = 9;
+int ch2out = 11;
+int intClockOut = 8;
+
 void setup() {
- pinMode(7, OUTPUT); // CH1 out
- pinMode(8, OUTPUT); // CH2 out
- pinMode(13, OUTPUT); // internal_clock_out
- pinMode(11, INPUT_PULLUP); // SW
- pinMode(3, INPUT); // ext_clock_in
+ pinMode(ch1out, OUTPUT); // CH1 out
+ pinMode(ch2out, OUTPUT); // CH2 out
+ pinMode(intClockOut, OUTPUT); // internal_clock_out
+ pinMode(A0, INPUT); // SW
+ pinMode(A3, INPUT); // ext_clock_in
  Serial.begin(9600);
 
  MsTimer2::set(1, timer_count); // 1ms Timer count every time
@@ -55,15 +59,15 @@ void setup() {
 }
 
 void loop() {
- AD_MD = analogRead(3);
- AD_rate = 1023 - analogRead(4);
+ AD_MD = analogRead(A1);
+ AD_rate = 1023 - analogRead(A2);
  rate = AD_rate * 2 + 100;
 
  old_ext_pulse = ext_pulse;
  old_int_pulse = int_pulse;
- ext_pulse = digitalRead(3);
+ ext_pulse = digitalRead(A3);
 
- mode_sw = digitalRead(11);
+ mode_sw = digitalRead(A0);
  old_mode = mode;
 
  old_ext_injudge = ext_injudge;
@@ -318,10 +322,10 @@ void loop() {
  }
  //--------------INTERNAL CLOCK Output (only when there is no external input)-----------
  if ( int_pulse == 1 ) {
-   digitalWrite(13, HIGH);
+   digitalWrite(intClockOut, HIGH);
  }
  else if ( ext_count >= ext_period / 2  ) {
-   digitalWrite(13, LOW);
+   digitalWrite(intClockOut, LOW);
  }
 
  //-----------------OUT1 output------------------
@@ -331,7 +335,7 @@ void loop() {
    M_count_ch1 = 0;
    M_done_ch1 = 0;
    if ( MD_ch1 <= 4 ) {
-     digitalWrite(7, HIGH);
+     digitalWrite(ch1out, HIGH);
      CH1out = 1;
    }
  }
@@ -342,7 +346,7 @@ void loop() {
    M_count_ch1 = 0;
    M_done_ch1 = 0;
    if ( MD_ch1 <= 4 ) {
-     digitalWrite(7, HIGH);
+     digitalWrite(ch1out, HIGH);
      CH1out = 1;
    }
  }
@@ -350,10 +354,10 @@ void loop() {
  if ( MD_ch1 < 5 ) {
    if ( ext_count  >= M_period_ch1  * M_count_ch1  && CH1out == 0) {
      CH1out = 1;
-     digitalWrite(7, HIGH);
+     digitalWrite(ch1out, HIGH);
    }
    if ( ext_count >= M_period_ch1  * M_count_ch1 + out_width_ch1  && CH1out == 1 ) {
-     digitalWrite(7, LOW);
+     digitalWrite(ch1out, LOW);
      M_count_ch1 ++;
      CH1out = 0;
    }
@@ -363,10 +367,10 @@ void loop() {
    if (D_count_ch1 == 1 && M_done_ch1 == 0) {
      CH1out = 1;
      M_done_ch1 = 1;
-     digitalWrite(7, HIGH);
+     digitalWrite(ch1out, HIGH);
    }
    if ( ext_count >=  out_width_ch1   ) {
-     digitalWrite(7, LOW);
+     digitalWrite(ch1out, LOW);
      CH1out = 0;
    }
  }
@@ -374,11 +378,11 @@ void loop() {
  else if ( MD_ch1 > 5 ) {
    if (D_count_ch1 == 1 && M_done_ch1 == 0) {
      CH1out = 1;
-     digitalWrite(7, HIGH);
+     digitalWrite(ch1out, HIGH);
      M_done_ch1 = 1;
    }
    if ( ext_count >=  out_width_ch1   ) {
-     digitalWrite(7, LOW);
+     digitalWrite(ch1out, LOW);
      CH1out = 0;
    }
  }
@@ -390,7 +394,7 @@ void loop() {
    M_count_ch2 = 0;
    M_done_ch2 = 0;
    if ( MD_ch2 <= 4 ) {
-     digitalWrite(8, HIGH);
+     digitalWrite(ch2out, HIGH);
      CH2out = 1;
    }
  }
@@ -400,7 +404,7 @@ void loop() {
    M_count_ch2 = 0;
    M_done_ch2 = 0;
    if ( MD_ch2 <= 4 ) {
-     digitalWrite(8, HIGH);
+     digitalWrite(ch2out, HIGH);
      CH2out = 1;
    }
  }
@@ -408,10 +412,10 @@ void loop() {
  if ( MD_ch2 < 5 ) {
    if ( ext_count  >= M_period_ch2  * M_count_ch2  && CH2out == 0) {
      CH2out = 1;
-     digitalWrite(8, HIGH);
+     digitalWrite(ch2out, HIGH);
    }
    if ( ext_count >= M_period_ch2  * M_count_ch2 + out_width_ch2  && CH2out == 1 ) {
-     digitalWrite(8, LOW);
+     digitalWrite(ch2out, LOW);
      M_count_ch2 ++;
      CH2out = 0;
    }
@@ -421,10 +425,10 @@ void loop() {
    if (D_count_ch2 == 1 && M_done_ch2 == 0) {
      CH2out = 1;
      M_done_ch2 = 1;
-     digitalWrite(8, HIGH);
+     digitalWrite(ch2out, HIGH);
    }
    if ( ext_count >=  out_width_ch2   ) {
-     digitalWrite(8, LOW);
+     digitalWrite(ch2out, LOW);
      CH2out = 0;
    }
  }
@@ -433,10 +437,10 @@ void loop() {
    if (D_count_ch2 == 1 && M_done_ch2 == 0) {
      CH2out = 1;
      M_done_ch2 = 1;
-     digitalWrite(8, HIGH);
+     digitalWrite(ch2out, HIGH);
    }
    if ( ext_count >=  out_width_ch2   ) {
-     digitalWrite(8, LOW);
+     digitalWrite(ch2out, LOW);
      CH2out = 0;
    }
  }
