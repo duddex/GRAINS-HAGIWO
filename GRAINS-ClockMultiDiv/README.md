@@ -8,7 +8,6 @@ Input / Knobs:
 * P1: Rate
 * P2: Mult / Div
 * P3: Mode switch (left: channel 1, right: channel 2)
-* IN3: V/oct
 
 Output:
 
