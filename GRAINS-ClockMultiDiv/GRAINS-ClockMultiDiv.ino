@@ -1,57 +1,57 @@
 //Clock M_D module
 #include <MsTimer2.h>
 
-unsigned long ext_count = 400;//タイマーカウント用
+unsigned long ext_count = 400; // For timer counting
 unsigned long old_ext_pulse = 0;
 unsigned long old_int_pulse = 0;
-unsigned long ext_period = 0;//周期
-unsigned long ext_count_result = 0;//タイマーのカウント結果
-unsigned long old_ext_count_result = 0;//タイマーのカウント結果
-byte ext_pulse = 0;//外部クロック　あれば1、なければ0
-byte int_pulse = 0;//内部クロック
-byte ext_injudge = 1;//外部入力有無判定。あれば1,なければ0。タイマーカウントが規定値超えると判定切り替え
+unsigned long ext_period = 0; // cycle
+unsigned long ext_count_result = 0; // Timer count result
+unsigned long old_ext_count_result = 0; // Timer count result
+byte ext_pulse = 0; // 1 if there is an external clock, 0 if not
+byte int_pulse = 0; // Internal clock
+byte ext_injudge = 1; // External input presence/absence selector. If present: 1. If not present: 0. Selection switches when the timer count exceeds the specified value
 byte old_ext_injudge = 2;
 
-int AD_rate = 512;//rateノブの入力
-int rate = 1000;//内部クロック動作時に使用
+int AD_rate = 512; // Rate Knob input
+int rate = 1000; // Used during internal clock operation
 
-int AD_MD = 512;//MDノブの入力値
-int out_width_ch1 = 10;//アウトプットのパルス幅。
-int out_width_ch2 = 10;//アウトプットのパルス幅。
-int old_AD_MD = 512;//SW切り替え時のRATE値誤読対策
-int MD_ch1 = 5;//マルチプル、ディバイダー判定ch1
-int MD_ch2 = 5;//マルチプル、ディバイダー判定ch2
-int M_period_ch1 = 0;//マルチプルの時、出力クロックの周期。マルチプルでなければ0とする。
-int M_period_ch2 = 0;//マルチプルの時、出力クロックの周期。マルチプルでなければ0とする。
-int M_count_ch1 = 1;//マルチプルの時、パルスごとにカウントし、設定値に達すると0に戻る
-int M_count_ch2 = 1;//マルチプルの時、パルスごとにカウントし、設定値に達すると0に戻る
-int D_count_ch1 = 1;//外部パルスが入るとカウントを位置上げる
-int D_count_ch2 = 1;//外部パルスが入るとカウントを位置上げる
-int D_full_ch1 = 1;//カウントの上限値
-int D_full_ch2 = 1;//カウントの上限値
-byte CH1out = 0;//0でLOW出力、1でHIGH出力
-byte CH2out = 0;//0でLOW出力、1でHIGH出力
-byte M_done_ch1 = 0; //マルチプルの出力確認用。ないと、1クロックで複数パルスでてしまう
-byte M_done_ch2 = 0; //マルチプルの出力確認用。ないと、1クロックで複数パルスでてしまう
+int AD_MD = 512; // MD Knob input value
+int out_width_ch1 = 10; // Output pulse width
+int out_width_ch2 = 10; // Output pulse width
+int old_AD_MD = 512; // SW Countermeasures against misreading of RATE value when switching
+int MD_ch1 = 5; // Multiple, divider determination ch1
+int MD_ch2 = 5; // Multiple, divider determination ch2
+int M_period_ch1 = 0; // When multiple, the cycle of the output clock. If it is not multiple, set it to 0
+int M_period_ch2 = 0; // When multiple, the cycle of the output clock. If it is not multiple, set it to 0
+int M_count_ch1 = 1; // When multiple, it counts for each pulse and returns to 0 when the set value is reached
+int M_count_ch2 = 1;// When multiple, it counts for each pulse and returns to 0 when the set value is reached.
+int D_count_ch1 = 1;// Increases the counter when an external pulse is applied
+int D_count_ch2 = 1;// Increases the counter when an external pulse is applied
+int D_full_ch1 = 1; // Upper limit of counter
+int D_full_ch2 = 1; // Upper limit of counter
+byte CH1out = 0; // 0 for LOW output, 1 for HIGH output
+byte CH2out = 0; // 0 for LOW output, 1 for HIGH output
+byte M_done_ch1 = 0; // For checking multiple outputs. Otherwise, one clock will result in multiple pulses.
+byte M_done_ch2 = 0; // For checking multiple outputs. Otherwise, one clock will result in multiple pulses.
 
 
-//---mode切り替え-------------
+//---mode switching-------------
 byte mode_sw = 1;
-byte mode = 1;//1=CH1,2=CH2
-byte old_mode = 0;//SW切り替え時のRATE値誤読対策
-int old_MD_ch1 = 0;//スイッチ切り替え時にディバイダーのクロックが狂うバグ対策
-int old_MD_ch2 = 0;//スイッチ切り替え時にディバイダーのクロックが狂うバグ対策
+byte mode = 1; // 1=CH1, 2=CH2
+byte old_mode = 0; // Measures against misreading of RATE value when switching SW
+int old_MD_ch1 = 0; // Bug fix for divider clock to go wrong when switching
+int old_MD_ch2 = 0; // Bug fix for divider clock to go wrong when switching
 
 void setup() {
- pinMode(7, OUTPUT); //CH1out
- pinMode(8, OUTPUT); //CH2out
- pinMode(13, OUTPUT); //internal_clock_out
- pinMode(11, INPUT_PULLUP); //SW
- pinMode(3, INPUT); //ext_clock_in
+ pinMode(7, OUTPUT); // CH1 out
+ pinMode(8, OUTPUT); // CH2 out
+ pinMode(13, OUTPUT); // internal_clock_out
+ pinMode(11, INPUT_PULLUP); // SW
+ pinMode(3, INPUT); // ext_clock_in
  Serial.begin(9600);
 
- MsTimer2::set(1, timer_count); // 1ms毎にタイマーカウント
- MsTimer2::start();//外部入力Highになったら、次のHighまでカウント
+ MsTimer2::set(1, timer_count); // 1ms Timer count every time
+ MsTimer2::start(); // When the external input becomes High, it counts to the next High
 }
 
 void loop() {
@@ -68,7 +68,7 @@ void loop() {
 
  old_ext_injudge = ext_injudge;
 
- //-----------ディバイダー出力のカウントリセット------------
+ //-----------Divider output count reset------------
  if (D_count_ch1 >= D_full_ch1) {
    D_count_ch1 = 0;
  }
@@ -76,10 +76,9 @@ void loop() {
    D_count_ch2 = 0;
  }
 
- //-----------SWの読み取り---------------
-
- old_MD_ch1 = MD_ch1;//スイッチ切り替え時にディバイダーのクロックが狂うバグ対策
- old_MD_ch2 = MD_ch2;//スイッチ切り替え時にディバイダーのクロックが狂うバグ対策
+ //-----------SW Read---------------
+ old_MD_ch1 = MD_ch1; // Bug fix for divider clock to go wrong when switching
+ old_MD_ch2 = MD_ch2; // Bug fix for divider clock to go wrong when switching
 
  if ( mode_sw == 1  ) {
    mode = 1;
@@ -88,14 +87,13 @@ void loop() {
    mode = 2;
  }
 
- if ( old_mode != mode ) {//スイッチ切り替え時にディバイダーのクロックが狂うバグ対策
+ if ( old_mode != mode ) { // Bug fix for divider clock to go wrong when switching
    old_AD_MD = AD_MD;
  }
 
- //---------MDノブ判定-----------------------
-
- if ( mode == 1 && abs(old_AD_MD - AD_MD ) > 30) { //absはスイッチ切り替え時にディバイダーのクロックが狂うバグ対策
-   old_AD_MD = 1200;//abs(old_AD_MD - AD_MD ) > 30が絶対に成立するため
+ //---------MD knob determination-----------------------
+ if ( mode == 1 && abs(old_AD_MD - AD_MD ) > 30) { // "abs" fixes a bug that the divider clock goes wrong when switching
+   old_AD_MD = 1200;//abs(old_AD_MD - AD_MD ) > 30が絶対に成立するため (not translated - Google translation did not make sense)
 
    if ( AD_MD >= 0 && AD_MD < 20) {
      MD_ch1 = 9;//*16
@@ -134,8 +132,8 @@ void loop() {
    }
  }
 
- else if ( mode == 2 && abs(old_AD_MD - AD_MD ) > 30) {  //absはスイッチ切り替え時にディバイダーのクロックが狂うバグ対策
-   old_AD_MD = 1200;//abs(old_AD_MD - AD_MD ) > 30が絶対に成立するため
+ else if ( mode == 2 && abs(old_AD_MD - AD_MD ) > 30) { // "abs" fixes a bug that the divider clock goes wrong when switching
+   old_AD_MD = 1200;//abs(old_AD_MD - AD_MD ) > 30が絶対に成立するため (not translated - Google translation did not make sense)
 
    if ( AD_MD >= 0 && AD_MD < 20) {
      MD_ch2 = 9;//*16
@@ -280,35 +278,35 @@ void loop() {
      break;
  }
 
- if ( MD_ch1 != old_MD_ch1 || MD_ch2 != old_MD_ch2 ) { //スイッチ切り替え時にディバイダーのクロックが狂うバグ対策
+ if ( MD_ch1 != old_MD_ch1 || MD_ch2 != old_MD_ch2 ) { // Bug fix for divider clock to go wrong when switching
    D_count_ch1 = 0;
    D_count_ch2 = 0;
  }
 
- //------------外部入力有無判定-------------------------------
- if ( ext_count > 4000 ) { //4s以上カウントが無ければ、外部入力無し判定
+ //------------External input presence/absence selection-------------------------------
+ if ( ext_count > 4000 ) { // If there is no count for 4s or more, we assume that there is no external input
    ext_injudge = 0;
  }
  else if ( ext_count < 4000 && ext_pulse == 1 ) {
    ext_injudge = 1;
  }
 
- if ( old_ext_injudge == 1 && ext_injudge == 0 ) { //外部入力が有→無のとき
+ if ( old_ext_injudge == 1 && ext_injudge == 0 ) { // When there is external input -> no
    ext_count = 0;
  }
 
 
- //---------クロック設定------------------------
- if ( ext_injudge != 0 ) { //外部クロックを使用
+ //---------Clock setting------------------------
+ if ( ext_injudge != 0 ) { // Use an external clock
    if (ext_pulse == 1 && old_ext_pulse == 0) {
-     old_ext_count_result = ext_count_result;//2回の平均取る用
+     old_ext_count_result = ext_count_result;// For taking an average of 2 times
      ext_count_result = ext_count;
      //            ext_count = 0;
-     ext_period = (old_ext_count_result + ext_count_result) / 2;//外部入力周期。ばらつき低減のため2回の平均値
-     //      MsTimer2::start();//外部入力Highになったら、次のHighまでカウント
+     ext_period = (old_ext_count_result + ext_count_result) / 2; // External input cycle. Average value of 2 times to reduce variation
+     //      MsTimer2::start();// When the external input becomes High, it counts to the next High.
    }
  }
- else if ( ext_injudge == 0) { //内部クロックを使用
+ else if ( ext_injudge == 0) { // Use internal clock
    ext_period = rate;
    if ( ext_count < 5 || ext_count >= ext_period) {
      int_pulse = 1;
@@ -318,8 +316,7 @@ void loop() {
    }
 
  }
- //--------------INTERNAL CLOCK出力（外部入力無い場合のみ）-----------
-
+ //--------------INTERNAL CLOCK Output (only when there is no external input)-----------
  if ( int_pulse == 1 ) {
    digitalWrite(13, HIGH);
  }
@@ -327,8 +324,8 @@ void loop() {
    digitalWrite(13, LOW);
  }
 
- //-----------------OUT1出力------------------
- if (ext_pulse == 1 && old_ext_pulse == 0) {//外部クロック用
+ //-----------------OUT1 output------------------
+ if (ext_pulse == 1 && old_ext_pulse == 0) { // For external clock
    D_count_ch1 ++;
    ext_count = 0;
    M_count_ch1 = 0;
@@ -339,7 +336,7 @@ void loop() {
    }
  }
 
- if (int_pulse == 1 && old_int_pulse == 0) {//内部クロック用
+ if (int_pulse == 1 && old_int_pulse == 0) { // For internal clock
    D_count_ch1 ++;
    ext_count = 0;
    M_count_ch1 = 0;
@@ -387,7 +384,7 @@ void loop() {
  }
 
 
- //-----------------OUT2出力------------------
+ //-----------------OUT2 output------------------
  if (ext_pulse == 1 && old_ext_pulse == 0) {
    D_count_ch2 ++;
    M_count_ch2 = 0;
@@ -398,7 +395,7 @@ void loop() {
    }
  }
 
- if (int_pulse == 1 && old_int_pulse == 0) {//内部クロック用
+ if (int_pulse == 1 && old_int_pulse == 0) { // For internal clock
    D_count_ch2 ++;
    M_count_ch2 = 0;
    M_done_ch2 = 0;
@@ -445,8 +442,7 @@ void loop() {
  }
 
 
- //開発用
-
+ // For development:
  Serial.print(ext_count);
  Serial.print(",");
  Serial.print(CH1out * 500);
@@ -456,7 +452,7 @@ void loop() {
 
 }
 
-//タイマーカウント。1ms毎にカウントを増やす
+// Timer count. Increase the count every 1ms
 void timer_count() {
  ext_count ++;
 }
