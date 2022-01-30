@@ -1,6 +1,9 @@
 //Clock M_D module
 #include <MsTimer2.h>
 
+// uncomment this for debug information on serial output
+#define DEBUG
+
 unsigned long ext_count = 400; // For timer counting
 unsigned long old_ext_pulse = 0;
 unsigned long old_int_pulse = 0;
@@ -33,6 +36,7 @@ byte CH1out = 0; // 0 for LOW output, 1 for HIGH output
 byte CH2out = 0; // 0 for LOW output, 1 for HIGH output
 byte M_done_ch1 = 0; // For checking multiple outputs. Otherwise, one clock will result in multiple pulses.
 byte M_done_ch2 = 0; // For checking multiple outputs. Otherwise, one clock will result in multiple pulses.
+byte gate_length = 50; // Duration of the clock output gate in percentage (in relation to clock speed)
 
 
 //---mode switching-------------
@@ -42,32 +46,56 @@ byte old_mode = 0; // Measures against misreading of RATE value when switching S
 int old_MD_ch1 = 0; // Bug fix for divider clock to go wrong when switching
 int old_MD_ch2 = 0; // Bug fix for divider clock to go wrong when switching
 
-int ch1out = 9;
-int ch2out = 11;
-int intClockOut = 8;
+
+// GRAINS In- and Output pins
+#define GRAINS_IN1_P1 (A2)
+#define GRAINS_IN2_P2 (A1)
+#define GRAINS_P3 (A0)
+#define GRAINS_IN3 (A3)
+#define GRAINS_AUDIO_IN (A4)
+static const byte CHANNEL1_OUT = 9; // Pin 9 = Output "OUT" with switch set to "M"
+static const byte CHANNEL2_OUT = 11; // Pin 11 = Output "OUT" with switch set to "G"
+static const byte intClockOut = 8; // Pin 8 = Output "D"
+
+// Change these settings to customize the behaviour of the module
+// More details: https://github.com/duddex/GRAINS-HAGIWO/blob/main/GRAINS-ClockMultiDiv/README.md
+static const byte SWITCH GRAINS_AUDIO_IN;
+static const byte EXT_CLOCK_IN GRAINS_IN3;
+static const byte GATE_LENGTH GRAINS_IN1_P1;
+static const byte CLOCK_RATE GRAINS_P3;
+static const byte MULT_DIV GRAINS_IN2_P2;
+
 
 void setup() {
- pinMode(ch1out, OUTPUT); // CH1 out
- pinMode(ch2out, OUTPUT); // CH2 out
- pinMode(intClockOut, OUTPUT); // internal_clock_out
- pinMode(A0, INPUT); // SW
- pinMode(A3, INPUT); // ext_clock_in
- Serial.begin(9600);
+#ifdef DEBUG 
+ Serial.begin(115200);
+#endif
 
+ pinMode(CHANNEL1_OUT, OUTPUT); // CH1 out
+ pinMode(CHANNEL2_OUT, OUTPUT); // CH2 out
+ pinMode(intClockOut, OUTPUT); // internal_clock_out
+
+ pinMode(A0, INPUT);
+ pinMode(A1, INPUT);
+ pinMode(A2, INPUT);
+ pinMode(A3, INPUT);
+ pinMode(A4, INPUT);
+ 
  MsTimer2::set(1, timer_count); // 1ms Timer count every time
  MsTimer2::start(); // When the external input becomes High, it counts to the next High
 }
 
 void loop() {
- AD_MD = analogRead(A1);
- AD_rate = 1023 - analogRead(A2);
+ AD_MD = analogRead(MULT_DIV);
+ AD_rate = 1023 - analogRead(CLOCK_RATE);
  rate = AD_rate * 2 + 100;
+ gate_length = map(analogRead(GATE_LENGTH), 0, 1023, 1, 100);
 
  old_ext_pulse = ext_pulse;
  old_int_pulse = int_pulse;
- ext_pulse = digitalRead(A3);
+ ext_pulse = digitalRead(EXT_CLOCK_IN);
 
- mode_sw = digitalRead(A0);
+ mode_sw = digitalRead(SWITCH);
  old_mode = mode;
 
  old_ext_injudge = ext_injudge;
@@ -335,7 +363,7 @@ void loop() {
    M_count_ch1 = 0;
    M_done_ch1 = 0;
    if ( MD_ch1 <= 4 ) {
-     digitalWrite(ch1out, HIGH);
+     digitalWrite(CHANNEL1_OUT, HIGH);
      CH1out = 1;
    }
  }
@@ -346,7 +374,7 @@ void loop() {
    M_count_ch1 = 0;
    M_done_ch1 = 0;
    if ( MD_ch1 <= 4 ) {
-     digitalWrite(ch1out, HIGH);
+     digitalWrite(CHANNEL1_OUT, HIGH);
      CH1out = 1;
    }
  }
@@ -354,35 +382,31 @@ void loop() {
  if ( MD_ch1 < 5 ) {
    if ( ext_count  >= M_period_ch1  * M_count_ch1  && CH1out == 0) {
      CH1out = 1;
-     digitalWrite(ch1out, HIGH);
+     digitalWrite(CHANNEL1_OUT, HIGH);
    }
    if ( ext_count >= M_period_ch1  * M_count_ch1 + out_width_ch1  && CH1out == 1 ) {
-     digitalWrite(ch1out, LOW);
+     digitalWrite(CHANNEL1_OUT, LOW);
      M_count_ch1 ++;
      CH1out = 0;
    }
- }
-
- else if ( MD_ch1 == 5 ) {
+ } else if ( MD_ch1 == 5 ) {
    if (D_count_ch1 == 1 && M_done_ch1 == 0) {
      CH1out = 1;
      M_done_ch1 = 1;
-     digitalWrite(ch1out, HIGH);
+     digitalWrite(CHANNEL1_OUT, HIGH);
    }
    if ( ext_count >=  out_width_ch1   ) {
-     digitalWrite(ch1out, LOW);
+     digitalWrite(CHANNEL1_OUT, LOW);
      CH1out = 0;
    }
- }
-
- else if ( MD_ch1 > 5 ) {
+ } else if ( MD_ch1 > 5 ) {
    if (D_count_ch1 == 1 && M_done_ch1 == 0) {
      CH1out = 1;
-     digitalWrite(ch1out, HIGH);
+     digitalWrite(CHANNEL1_OUT, HIGH);
      M_done_ch1 = 1;
    }
    if ( ext_count >=  out_width_ch1   ) {
-     digitalWrite(ch1out, LOW);
+     digitalWrite(CHANNEL1_OUT, LOW);
      CH1out = 0;
    }
  }
@@ -394,7 +418,7 @@ void loop() {
    M_count_ch2 = 0;
    M_done_ch2 = 0;
    if ( MD_ch2 <= 4 ) {
-     digitalWrite(ch2out, HIGH);
+     digitalWrite(CHANNEL2_OUT, HIGH);
      CH2out = 1;
    }
  }
@@ -404,7 +428,7 @@ void loop() {
    M_count_ch2 = 0;
    M_done_ch2 = 0;
    if ( MD_ch2 <= 4 ) {
-     digitalWrite(ch2out, HIGH);
+     digitalWrite(CHANNEL2_OUT, HIGH);
      CH2out = 1;
    }
  }
@@ -412,48 +436,49 @@ void loop() {
  if ( MD_ch2 < 5 ) {
    if ( ext_count  >= M_period_ch2  * M_count_ch2  && CH2out == 0) {
      CH2out = 1;
-     digitalWrite(ch2out, HIGH);
+     digitalWrite(CHANNEL2_OUT, HIGH);
    }
    if ( ext_count >= M_period_ch2  * M_count_ch2 + out_width_ch2  && CH2out == 1 ) {
-     digitalWrite(ch2out, LOW);
+     digitalWrite(CHANNEL2_OUT, LOW);
      M_count_ch2 ++;
      CH2out = 0;
    }
- }
-
- else if ( MD_ch2 == 5 ) {
+ } else if ( MD_ch2 == 5 ) {
    if (D_count_ch2 == 1 && M_done_ch2 == 0) {
      CH2out = 1;
      M_done_ch2 = 1;
-     digitalWrite(ch2out, HIGH);
+     digitalWrite(CHANNEL2_OUT, HIGH);
    }
    if ( ext_count >=  out_width_ch2   ) {
-     digitalWrite(ch2out, LOW);
+     digitalWrite(CHANNEL2_OUT, LOW);
+     CH2out = 0;
+   }
+ } else if ( MD_ch2 > 5 ) {
+   if (D_count_ch2 == 1 && M_done_ch2 == 0) {
+     CH2out = 1;
+     M_done_ch2 = 1;
+     digitalWrite(CHANNEL2_OUT, HIGH);
+   }
+   if ( ext_count >=  out_width_ch2   ) {
+     digitalWrite(CHANNEL2_OUT, LOW);
      CH2out = 0;
    }
  }
 
- else if ( MD_ch2 > 5 ) {
-   if (D_count_ch2 == 1 && M_done_ch2 == 0) {
-     CH2out = 1;
-     M_done_ch2 = 1;
-     digitalWrite(ch2out, HIGH);
-   }
-   if ( ext_count >=  out_width_ch2   ) {
-     digitalWrite(ch2out, LOW);
-     CH2out = 0;
-   }
- }
-
-
- // For development:
+// For development:
+#ifdef DEBUG
+ Serial.print("ext_count:");
  Serial.print(ext_count);
- Serial.print(",");
+ Serial.print(", CH1out*500: ");
  Serial.print(CH1out * 500);
- Serial.print(",");
+ Serial.print(", D_count_ch1*80: ");
  Serial.print(D_count_ch1 * 80);
- Serial.println("");
-
+ Serial.print(", out_width_ch1: ");
+ Serial.print(out_width_ch1);
+ Serial.print(", out_width_ch2: ");
+ Serial.print(out_width_ch2);
+ Serial.println();
+#endif
 }
 
 // Timer count. Increase the count every 1ms
