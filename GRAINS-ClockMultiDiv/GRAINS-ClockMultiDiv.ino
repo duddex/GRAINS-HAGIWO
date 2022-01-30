@@ -1,7 +1,8 @@
 //Clock M_D module
+// original code here: https://note.com/solder_state/n/n8907f2f6e8f5
 #include <MsTimer2.h>
 
-// uncomment this for debug information on serial output
+// Uncomment the next line for getting debug information on serial output
 #define DEBUG
 
 unsigned long ext_count = 400; // For timer counting
@@ -112,10 +113,10 @@ void loop() {
  old_MD_ch1 = MD_ch1; // Bug fix for divider clock to go wrong when switching
  old_MD_ch2 = MD_ch2; // Bug fix for divider clock to go wrong when switching
 
- if ( mode_sw == 1  ) {
+ if ( mode_sw == 0  ) {
    mode = 1;
  }
- else if (mode_sw == 0  ) {
+ else if (mode_sw == 1  ) {
    mode = 2;
  }
 
@@ -128,39 +129,39 @@ void loop() {
    old_AD_MD = 1200;//abs(old_AD_MD - AD_MD ) > 30が絶対に成立するため (not translated - Google translation did not make sense)
 
    if ( AD_MD >= 0 && AD_MD < 20) {
-     MD_ch1 = 9;//*16
+     MD_ch1 = 9; // *16
    }
 
    else if ( AD_MD >= 20 && AD_MD < 90) {
-     MD_ch1 = 8;//*8
+     MD_ch1 = 8; // *8
    }
 
    else if ( AD_MD >= 90 && AD_MD < 240) {
-     MD_ch1 = 7;//*4
+     MD_ch1 = 7; // *4
    }
 
    else if ( AD_MD >= 240 && AD_MD < 400) {
-     MD_ch1 = 6;//*2
+     MD_ch1 = 6; // *2
    }
 
    else if ( AD_MD >= 400 && AD_MD < 550) {
-     MD_ch1 = 5;//*1
+     MD_ch1 = 5; // *1
    }
 
    else if ( AD_MD >= 550 && AD_MD < 700) {
-     MD_ch1 = 4;//1/2
+     MD_ch1 = 4; //1/2
    }
 
    else if ( AD_MD >= 700 && AD_MD < 820) {
-     MD_ch1 = 3;//1/3
+     MD_ch1 = 3; // 1/3
    }
 
    else if ( AD_MD >= 820 && AD_MD < 960) {
-     MD_ch1 = 2;//1/4
+     MD_ch1 = 2; // 1/4
    }
 
    else if ( AD_MD >= 960 && AD_MD < 1024) {
-     MD_ch1 = 1;//1/8
+     MD_ch1 = 1; // 1/8
    }
  }
 
@@ -168,39 +169,39 @@ void loop() {
    old_AD_MD = 1200;//abs(old_AD_MD - AD_MD ) > 30が絶対に成立するため (not translated - Google translation did not make sense)
 
    if ( AD_MD >= 0 && AD_MD < 20) {
-     MD_ch2 = 9;//*16
+     MD_ch2 = 9; // *16
    }
 
    else if ( AD_MD >= 20 && AD_MD < 90) {
-     MD_ch2 = 8;//*8
+     MD_ch2 = 8; // *8
    }
 
    else if ( AD_MD >= 90 && AD_MD < 240) {
-     MD_ch2 = 7;//*4
+     MD_ch2 = 7; // *4
    }
 
    else if ( AD_MD >= 240 && AD_MD < 400) {
-     MD_ch2 = 6;//*2
+     MD_ch2 = 6; // *2
    }
 
    else if ( AD_MD >= 400 && AD_MD < 550) {
-     MD_ch2 = 5;//*1
+     MD_ch2 = 5 ; // *1
    }
 
    else if ( AD_MD >= 550 && AD_MD < 700) {
-     MD_ch2 = 4;//1/2
+     MD_ch2 = 4; // 1/2
    }
 
    else if ( AD_MD >= 700 && AD_MD < 820) {
-     MD_ch2 = 3;//1/3
+     MD_ch2 = 3; // 1/3
    }
 
    else if ( AD_MD >= 820 && AD_MD < 960) {
-     MD_ch2 = 2;//1/4
+     MD_ch2 = 2; // 1/4
    }
 
    else if ( AD_MD >= 960 && AD_MD < 1024) {
-     MD_ch2 = 1;//1/8
+     MD_ch2 = 1; // 1/8
    }
  }
 
@@ -467,17 +468,17 @@ void loop() {
 
 // For development:
 #ifdef DEBUG
- Serial.print("ext_count:");
- Serial.print(ext_count);
- Serial.print(", CH1out*500: ");
- Serial.print(CH1out * 500);
- Serial.print(", D_count_ch1*80: ");
- Serial.print(D_count_ch1 * 80);
- Serial.print(", out_width_ch1: ");
- Serial.print(out_width_ch1);
- Serial.print(", out_width_ch2: ");
- Serial.print(out_width_ch2);
- Serial.println();
+  Serial.print("ext_count: ");
+  Serial.print(ext_count);
+  Serial.print("\text_period: ");
+  Serial.print(ext_period);
+  Serial.print("\tgate_length: ");
+  Serial.print(gate_length);
+  Serial.print("%\tMD_ch1: ");
+  Serial.print(MD_ch1);
+  Serial.print("\tout_width_ch1: ");
+  Serial.print(out_width_ch1);
+  Serial.println();
 #endif
 }
 
