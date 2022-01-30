@@ -20,8 +20,8 @@ int AD_rate = 512; // Rate Knob input
 int rate = 1000; // Used during internal clock operation
 
 int AD_MD = 512; // MD Knob input value
-int out_width_ch1 = 10; // Output pulse width
-int out_width_ch2 = 10; // Output pulse width
+float out_width_ch1 = 10; // Output pulse width
+float out_width_ch2 = 10; // Output pulse width
 int old_AD_MD = 512; // SW Countermeasures against misreading of RATE value when switching
 int MD_ch1 = 5; // Multiple, divider determination ch1
 int MD_ch2 = 5; // Multiple, divider determination ch2
@@ -37,7 +37,7 @@ byte CH1out = 0; // 0 for LOW output, 1 for HIGH output
 byte CH2out = 0; // 0 for LOW output, 1 for HIGH output
 byte M_done_ch1 = 0; // For checking multiple outputs. Otherwise, one clock will result in multiple pulses.
 byte M_done_ch2 = 0; // For checking multiple outputs. Otherwise, one clock will result in multiple pulses.
-byte gate_length = 50; // Duration of the clock output gate in percentage (in relation to clock speed)
+float gate_length = 50; // Duration of the clock output gate in percentage (in relation to clock speed)
 
 
 //---mode switching-------------
@@ -90,7 +90,7 @@ void loop() {
  AD_MD = analogRead(MULT_DIV);
  AD_rate = 1023 - analogRead(CLOCK_RATE);
  rate = AD_rate * 2 + 100;
- gate_length = map(analogRead(GATE_LENGTH), 0, 1023, 1, 100);
+ gate_length = map(analogRead(GATE_LENGTH), 0, 1023, 5, 90); // restrict gate length range from 5% to 90%
 
  old_ext_pulse = ext_pulse;
  old_int_pulse = int_pulse;
@@ -208,27 +208,27 @@ void loop() {
 
  switch (MD_ch1) {
    case 1:
-     out_width_ch1 = ext_period / 2 / 8;
+     out_width_ch1 = ext_period / 8;
      M_period_ch1 = ext_period / 8;
      break;
 
    case 2:
-     out_width_ch1 = ext_period / 2 / 4;
+     out_width_ch1 = ext_period / 4;
      M_period_ch1 = ext_period / 4;
      break;
 
    case 3:
-     out_width_ch1 = ext_period / 2 / 3;
+     out_width_ch1 = ext_period / 3;
      M_period_ch1 = ext_period / 3;
      break;
 
    case 4:
-     out_width_ch1 = ext_period / 2 / 2;
+     out_width_ch1 = ext_period / 2;
      M_period_ch1 = ext_period / 2;
      break;
 
    case 5:
-     out_width_ch1 = ext_period / 2 ;
+     out_width_ch1 = ext_period;
      M_period_ch1 = 0;
      D_full_ch1 = 1;
      break;
@@ -258,30 +258,35 @@ void loop() {
      break;
  }
 
+ // TODO: Calculate gate length also for divided clock (for now: only multiplied clock)
+ if (MD_ch1<=5) {
+  out_width_ch1 = out_width_ch1 * (gate_length / 100);
+ }
+
 
  switch (MD_ch2) {
    case 1:
-     out_width_ch2 = ext_period / 2 / 8;
+     out_width_ch2 = ext_period / 8;
      M_period_ch2 = ext_period / 8;
      break;
 
    case 2:
-     out_width_ch2 = ext_period / 2 / 4;
+     out_width_ch2 = ext_period / 4;
      M_period_ch2 = ext_period / 4;
      break;
 
    case 3:
-     out_width_ch2 = ext_period / 2 / 3;
+     out_width_ch2 = ext_period / 3;
      M_period_ch2 = ext_period / 3;
      break;
 
    case 4:
-     out_width_ch2 = ext_period / 2 / 2;
+     out_width_ch2 = ext_period / 2;
      M_period_ch2 = ext_period / 2;
      break;
 
    case 5:
-     out_width_ch2 = ext_period / 2 ;
+     out_width_ch2 = ext_period;
      M_period_ch2 = 0;
      D_full_ch2 = 1;
      break;
@@ -309,6 +314,11 @@ void loop() {
      M_period_ch2 = 0;
      D_full_ch2 = 16;
      break;
+ }
+
+ // TODO: Calculate gate length also for divided clock (for now: only multiplied clock)
+ if (MD_ch2<=5) {
+  out_width_ch2 = out_width_ch2 / (100/gate_length);
  }
 
  if ( MD_ch1 != old_MD_ch1 || MD_ch2 != old_MD_ch2 ) { // Bug fix for divider clock to go wrong when switching
@@ -352,8 +362,7 @@ void loop() {
  //--------------INTERNAL CLOCK Output (only when there is no external input)-----------
  if ( int_pulse == 1 ) {
    digitalWrite(intClockOut, HIGH);
- }
- else if ( ext_count >= ext_period / 2  ) {
+ } else if ( ext_count >= ext_period / (100/gate_length)) {
    digitalWrite(intClockOut, LOW);
  }
 
