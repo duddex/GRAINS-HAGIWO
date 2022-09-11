@@ -28,8 +28,8 @@ void setup() {
 
 void setFreqs(Q16n16 freq) {
  carrier_freq = freq ; // V/oct apply
- mod_freq = ((carrier_freq >> 8)  * (mozziAnalogRead(A0) / 2 +mozziAnalogRead(A1) / 2));
- deviation = ((mod_freq >> 16) * (1 + mozziAnalogRead(A2)+mozziAnalogRead(A3))); // (Q16n16>>16)   Q8n8 = Q24n8, beware of overflow
+ mod_freq = ((carrier_freq >> 8)  * (mozziAnalogRead(A1) / 2 +mozziAnalogRead(A2) / 2));
+ deviation = ((mod_freq >> 16) * (1 + mozziAnalogRead(A0)+mozziAnalogRead(A3))); // (Q16n16>>16)   Q8n8 = Q24n8, beware of overflow
  aCarrier.setFreq_Q16n16(carrier_freq);
  aModulator.setFreq_Q16n16(mod_freq);
 }
