@@ -38,7 +38,7 @@ void updateControl() {
  voct = mozziAnalogRead(A4);
  
  //knob_freq = mozziAnalogRead(A4);
- knob_freq = 0;
+ knob_freq = 256; // fixed knob_freq because we only have A0 to A4 as input PINs
  setFreqs((2270658 + knob_freq * 5000) * pow(2, (pgm_read_float(&(voctpow[voct]))))) ;
 }
 
