@@ -49,18 +49,18 @@ void setup()
 }
 void updateControl() {
  //harmonics
- harm_knob = (mozziAnalogRead(2) / 4); // IN1/POT1
+ harm_knob = (mozziAnalogRead(A2) / 4); // IN1/POT1
  harm_knob = constrain(harm_knob, 0, 255);
 
  //harmonics_gain
- gain = (mozziAnalogRead(1) / 4); // IN2/POT2
+ gain = (mozziAnalogRead(A1) / 4); // IN2/POT2
  gain = constrain(gain, 0, 255);
 
  //OSC frequency knob
- freq1 = mozziAnalogRead(0) / 8 ; // POT3
+ freq1 = mozziAnalogRead(A0) / 8 ; // POT3
 
  //frequency setting
- voct = mozziAnalogRead(3) ; // IN3
+ voct = mozziAnalogRead(A3) ; // IN3
  freqv1 = freq1 * pow(2, (pgm_read_float(&(voctpow[voct])))); // V/oct apply
 
  aSin1.setFreq(freqv1); // set the frequency
